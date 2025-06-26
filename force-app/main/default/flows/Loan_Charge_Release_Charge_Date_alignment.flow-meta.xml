@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>64.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <name>Set_Release_Charge_date_to_incoming_date_plus_1_month</name>
+        <label>Set Release Charge date to incoming date plus 1 month</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>Get_Release_Charge_record.Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Formula_IncomingChargeDatePlus1Month</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Update_Release_Charge_record</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Release_Charge_date_to_plus_1_month</name>
+        <label>Set Release Charge date to plus 1 month</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>Get_Release_Charge_record.Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Formula_ReleaseChargeDatePlus1Month</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Update_Release_Charge_record</targetReference>
+        </connector>
+    </assignments>
+    <constants>
+        <name>DuplicateLoanChargeError</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>You cannot have multiple Loan Charge records of type Release charge on the same Loan record</stringValue>
+        </value>
+    </constants>
+    <decisions>
+        <name>Incoming_record_GTOETRelease_charge_date</name>
+        <label>Incoming record &gt;= Release charge date</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>Incoming record is in safe range</defaultConnectorLabel>
+        <rules>
+            <name>Incoming_record_GTOETRelease_charge_date_yes</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Date__c</leftValueReference>
+                <operator>GreaterThanOrEqualTo</operator>
+                <rightValue>
+                    <elementReference>Get_Release_Charge_record.Date__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Is_1_month_safe</targetReference>
+            </connector>
+            <label>Release Charge Record must be pushed up</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_1_month_safe</name>
+        <label>Is 1 month safe</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>Set_Release_Charge_date_to_incoming_date_plus_1_month</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>No - new charge date must be after the incoming loan charge</defaultConnectorLabel>
+        <rules>
+            <name>Is_1_month_safe_yes</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Formula_ReleaseChargeDatePlus1Month</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <elementReference>$Record.Date__c</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Release_Charge_date_to_plus_1_month</targetReference>
+            </connector>
+            <label>Yes</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Type_Check_Is_Release_Charge</name>
+        <label>Type Check Is Release Charge</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnector>
+            <targetReference>Get_Release_Charge_record</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Type_Check_Is_Release_Charge_Yes</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Charge_Type__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Release Charge</stringValue>
+                </rightValue>
+            </conditions>
+            <label>Yes</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>Formula_IncomingChargeDatePlus1Month</name>
+        <dataType>Date</dataType>
+        <expression>ADDMONTHS({!$Record.Date__c},1)</expression>
+    </formulas>
+    <formulas>
+        <name>Formula_ReleaseChargeDatePlus1Month</name>
+        <dataType>Date</dataType>
+        <expression>ADDMONTHS({!Get_Release_Charge_record.Date__c},1)</expression>
+    </formulas>
+    <interviewLabel>Loan Charge Release Charge Date alignment {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Loan Charge Release Charge Date alignment</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <description>Retrieve release charge record</description>
+        <name>Get_Release_Charge_record</name>
+        <label>Get Release Charge record</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Incoming_record_GTOETRelease_charge_date</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Loan__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Loan__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Charge_Type__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Release Charge</stringValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Loan_Charge__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Release_Charge_record</name>
+        <label>Update Release Charge record</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <inputReference>Get_Release_Charge_record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Type_Check_Is_Release_Charge</targetReference>
+        </connector>
+        <object>Loan_Charge__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>
